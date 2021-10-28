@@ -43,7 +43,7 @@ def main():
     parser = argparse.ArgumentParser(description='Read in HTML \
                                                  file to embed image',
                                      formatter_class=argparse.ArgumentDefaultsHelpFormatter)
-    parser.add_argument('file_path', help='Path of html file to process')
+    parser.add_argument('--file_path', required=True, help='Path of html file to process')
     args = parser.parse_args()
     path = os.path.join(os.getcwd(), args.file_path)
     embed_image_urls(path)
