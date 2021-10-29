@@ -5,4 +5,4 @@ Simple Python Script that goes through the a HTML file and replaces the relative
 
 # Get Started
 
-` python3 embed_html_images.py sample.html` 
+` python3 embed_html_images.py --file_path sample.html` 
