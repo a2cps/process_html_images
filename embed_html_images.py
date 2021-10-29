@@ -4,11 +4,14 @@ import bs4
 import os
 
 
-def embed_image_urls(html_file):
+def embed_image_urls(html_file, out_path=None):
     '''
     Convert Image to Text Equivalent From HTML File
     '''
 
+    if not out_path:
+        out_path = html_file
+        
     try:
         with open(html_file) as fp:
             soup = bs4.BeautifulSoup(fp, "html.parser")
@@ -44,9 +47,10 @@ def main():
                                                  file to embed image',
                                      formatter_class=argparse.ArgumentDefaultsHelpFormatter)
     parser.add_argument('--file_path', required=True, help='Path of html file to process')
+    parser.add_argument('--out_path', required=False, default=None, help='Path of html file to process')
     args = parser.parse_args()
     path = os.path.join(os.getcwd(), args.file_path)
-    embed_image_urls(path)
+    embed_image_urls(html_file=path, out_path=out_path)
 
 
 if __name__ == "__main__":
