@@ -28,7 +28,7 @@ def embed_image_urls(html_file, out_path=None):
             with open(path_to_image, 'rb') as image_to_text:
                 text = base64.b64encode(image_to_text.read())
                 converted_text = text.decode('utf-8')
-                data_url = "data:image/jpg;base64,"
+                data_url = "data:image/svg+xml;base64,"
                 path_to_image = path_to_image.replace(path_to_image,
                                                       data_url +
                                                       converted_text)
