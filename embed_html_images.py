@@ -43,7 +43,7 @@ def embed_image_urls(html_file, out_path=None):
 
     # write contents back to the html file
     try:
-        with open(html_file, "wb") as fo:
+        with open(out_path, "wb") as fo:
             fo.write(soup.prettify("utf-8"))
     except IOError as e:
         print("Couldn't open or write to file (%s)." % e)
@@ -57,7 +57,7 @@ def main():
     parser.add_argument('--out_path', required=False, default=None, help='Path of html file to process')
     args = parser.parse_args()
     path = os.path.join(os.getcwd(), args.file_path)
-    embed_image_urls(html_file=path, out_path=out_path)
+    embed_image_urls(html_file=path, out_path=args.out_path)
 
 
 if __name__ == "__main__":
