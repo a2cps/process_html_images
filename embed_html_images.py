@@ -63,7 +63,9 @@ def main():
                                                  file to embed image',
                                      formatter_class=argparse.ArgumentDefaultsHelpFormatter)
     parser.add_argument('--file_path', required=True, help='Path of html file to process')
-    parser.add_argument('--out_path', required=False, default=None, help='Path of html file to process')
+    parser.add_argument('--out_path', required=False, default=None, 
+                        help='Path of output html file. Overwrites `file_path` '
+                        'in place if `out_path` is not specified.')
     args = parser.parse_args()
     path = os.path.join(os.getcwd(), args.file_path)
     embed_image_urls(html_file=path, out_path=args.out_path)
