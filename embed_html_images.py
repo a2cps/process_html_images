@@ -7,7 +7,7 @@ import click
 
 
 @attr.s
-class ElemEncoder:
+class ImgEmbedder:
     """Converts link to an image from HTML element to encoded data in 
     the element.
     """
@@ -44,7 +44,7 @@ class ElemEncoder:
     def dtype(self) -> str:
         """Get the `type` attribute of the HTML element. Guess the data type 
         based on file extension if `type` attribute does not exist or not
-        defined in mapping.
+        defined in the `EXT_TO_TYPE_MAPPING`.
         """
         dtype = self.elem.get('type')
         if dtype:
@@ -67,7 +67,7 @@ class ElemEncoder:
 
 def embed_all_elem(soup: bs4.BeautifulSoup, elem_name: str, url_attr: str = 'src'):
     for elem in soup.findAll(elem_name):
-        encoder = ElemEncoder(elem=elem, url_attr=url_attr)
+        encoder = ImgEmbedder(elem=elem, url_attr=url_attr)
         encoder.embed_img()
 
 
