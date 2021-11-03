@@ -2,74 +2,95 @@ import argparse
 import base64
 import bs4
 import os
+import attr
+import click
 
 
-def embed_in_elem(elem: bs4.element.Tag, attr_name: str):
-    assert elem.get(attr_name), "element has no HTML attribute " + attr_name
-    path_to_image = elem[attr_name]
+@attr.s
+class ImgEmbedder:
+    """Converts link to an image from HTML element to encoded data in 
+    the element.
+    """
+    EXT_TO_TYPE_MAPPING = {
+        'svg': 'image/svg+xml',
+    }
 
-    if str(path_to_image).endswith('.svg'):
-        data_url = "data:image/svg+xml;base64,"
-    elif str(path_to_image).endswith(('.png', '.jpg')):
-        data_url = "data:image/jpg;base64,"
-    else:
-        raise Exception("extension not supported")
+    elem = attr.ib(type=bs4.element.Tag)
+    url_attr = attr.ib(type=str)
 
-    with open(path_to_image, 'rb') as image_to_text:
-        text = base64.b64encode(image_to_text.read())
-        converted_text = text.decode('utf-8')
-        path_to_image = path_to_image.replace(path_to_image,
-                                                data_url +
-                                                converted_text)
-        elem[attr_name] = path_to_image
+    @property
+    def img_url(self) -> str:
+        """Returns the URL of the linked image"""
+        url = self.elem.get(self.url_attr)
+        if url:
+            return url
+        else:
+            raise ValueError(f"could not find an HTML attribute {self.url_attr} "
+                             f"in the element {self.elem}")
+
+    @property
+    def img_encoded(self) -> str:
+        with open(self.img_url, 'rb') as f:
+            text = base64.b64encode(f.read())
+            return text.decode('utf-8')
+
+    @property
+    def img_ext(self) -> str:
+        """Returns the extension of the image URL, without the dot prefix"""
+        root, ext = os.path.splitext(self.img_url)
+        return ext.lstrip('.')
+
+    @property
+    def dtype(self) -> str:
+        """Get the `type` attribute of the HTML element. Guess the data type 
+        based on file extension if `type` attribute does not exist or not
+        defined in the `EXT_TO_TYPE_MAPPING`.
+        """
+        dtype = self.elem.get('type')
+        if dtype:
+            return dtype
+        elif self.img_ext in self.EXT_TO_TYPE_MAPPING:
+            return self.EXT_TO_TYPE_MAPPING[self.img_ext]
+        else:
+            return f"image/{self.img_ext}"
+    
+    @property
+    def already_encoded(self) -> bool:
+        return hasattr(self, '_og_attr')
+
+    def embed_img(self):
+        # save the original contents of the attribute
+        if not self.already_encoded:
+            self._og_attr = self.elem.get(self.url_attr)
+        self.elem[self.url_attr] = f"data:{self.dtype};base64,{self.img_encoded}"
 
 
-def embed_image_urls(html_file, out_path=None):
-    '''
-    Convert Image to Text Equivalent From HTML File
-    '''
+def embed_all_elem(soup: bs4.BeautifulSoup, elem_name: str, url_attr: str = 'src'):
+    for elem in soup.findAll(elem_name):
+        encoder = ImgEmbedder(elem=elem, url_attr=url_attr)
+        encoder.embed_img()
 
+
+@click.command()
+@click.option('-i', '--in-path', required=True, type=click.Path(), 
+              help='path to input HTML file')
+@click.option('-o', '--out-path', required=False, default=None, type=click.Path(),
+              help='path to output file. Omit if same as --in-path')
+def embed_in_html(in_path: str, out_path: str = None):
+    """Convert external links to images in `in_path` to embedded images.
+    """
     if not out_path:
-        out_path = html_file
-        
-    try:
-        with open(html_file) as fp:
-            soup = bs4.BeautifulSoup(fp, "html.parser")
-    except IOError as e:
-        print("Couldn't open file (%s)." % e)
-        raise
+        out_path = in_path
+    with open(in_path) as f:
+        soup = bs4.BeautifulSoup(f, "html.parser")
+    
+    # embed all img and object elements
+    embed_all_elem(soup, 'img', url_attr='src')
+    embed_all_elem(soup, 'object', url_attr='data')
 
-    # embed img elements with base64
-    for elem in soup.findAll("img"):
-        if elem.get('src'):
-            embed_in_elem(elem, 'src')
-
-    # embed object elements with base64
-    for elem in soup.findAll("object"):
-        if elem.get('data'):
-            embed_in_elem(elem, 'data')
-
-    # write contents back to the html file
-    try:
-        with open(out_path, "wb") as fo:
-            fo.write(soup.prettify("utf-8"))
-    except IOError as e:
-        print("Couldn't open or write to file (%s)." % e)
-        raise
-
-
-def main():
-    parser = argparse.ArgumentParser(description='Read in HTML \
-                                                 file to embed image',
-                                     formatter_class=argparse.ArgumentDefaultsHelpFormatter)
-    parser.add_argument('--file_path', required=True, help='Path of html file to process')
-    parser.add_argument('--out_path', required=False, default=None, 
-                        help='Path of output html file. Overwrites `file_path` '
-                        'in place if `out_path` is not specified.')
-    args = parser.parse_args()
-    path = os.path.join(os.getcwd(), args.file_path)
-    embed_image_urls(html_file=path, out_path=args.out_path)
+    with open(out_path, "wb") as f:
+        f.write(soup.prettify("utf-8"))
 
 
 if __name__ == "__main__":
-    main()
+    embed_in_html()
