@@ -1,3 +1,5 @@
+#!/usr/bin/env python
+
 import argparse
 import base64
 import bs4
@@ -83,7 +85,7 @@ def embed_in_html(in_path: str, out_path: str = None):
         out_path = in_path
     with open(in_path) as f:
         soup = bs4.BeautifulSoup(f, "html.parser")
-    
+
     # embed all img and object elements
     embed_all_elem(soup, 'img', url_attr='src')
     embed_all_elem(soup, 'object', url_attr='data')
