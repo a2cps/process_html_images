@@ -1,27 +1,16 @@
-# pull base docker image
-FROM python:3.8.1-slim-buster
+FROM mambaorg/micromamba:1.4.2
 
 # maintainer details
-MAINTAINER Shweta Gopal "sgopal@tacc.utexas.edu"
+MAINTAINER Patrick Sadil "psadil1@jh.edu"
 
-# copy source files
-COPY . /opt/app
+COPY --chown=$MAMBA_USER:$MAMBA_USER env.yml /tmp/env.yml
 
-# set working directory
-WORKDIR /opt/app
-
-# install dependencies
-RUN pip3 install -r requirements.txt
-
-# copy the python script into root directory
-COPY embed_html_images.py /usr/local/bin
+RUN micromamba install -y -n base -f /tmp/env.yml && \
+    micromamba clean --all --yes
 
 # make the python script executable
+COPY --chown=$MAMBA_USER:$MAMBA_USER embed_html_images.py /usr/local/bin/embed_html_images.py
 RUN ["chmod", "+x", "/usr/local/bin/embed_html_images.py"]
 
-# set environment variable path to detect python executable script
-ENV PATH="/usr/local/bin:${PATH}"
-
-# set the command to display a help message on how to use this image
-CMD echo "To use this image: docker run -v /hostdirectory_with_html_file:/data reshg/process-html-images:1.0 embed_html_images.py -i /data/sample.html -o /data/out.html"
+ENTRYPOINT ["/usr/local/bin/_entrypoint.sh", "python", "/usr/local/bin/embed_html_images.py"]
 
